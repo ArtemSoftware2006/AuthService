@@ -1,7 +1,19 @@
+using DAL;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+var conf_builder = new ConfigurationBuilder();
 
+conf_builder.SetBasePath(Directory.GetCurrentDirectory());
+conf_builder.AddJsonFile("appsettings.json");
+var config = conf_builder.Build();
+
+var connection = config.GetConnectionString("DefaultConnection");
+
+Console.WriteLine(connection);
+
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connection));
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
