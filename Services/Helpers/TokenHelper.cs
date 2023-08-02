@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
 namespace API
@@ -18,6 +19,7 @@ namespace API
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Convert.FromBase64String(config.GetSection("Secret").Value);
 
+            //Тут добавляется полезная нагрузка
             var claimsIdentity = new ClaimsIdentity(new[] {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString())
             });
@@ -31,7 +33,6 @@ namespace API
                 Audience = config.GetSection("Audience").Value,
                 Expires = DateTime.Now.AddMinutes(15),
                 SigningCredentials = signingCredentials,
-
             };
             var securityToken = tokenHandler.CreateToken(tokenDescriptor);
 
