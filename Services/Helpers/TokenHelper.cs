@@ -13,7 +13,7 @@ namespace API
            var conf_builder = new ConfigurationBuilder();
 
             conf_builder.SetBasePath(Directory.GetCurrentDirectory());
-            conf_builder.AddJsonFile("secutiry.json");
+            conf_builder.AddJsonFile("security.json");
             var config = conf_builder.Build();
 
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -31,7 +31,7 @@ namespace API
                 Subject = claimsIdentity,
                 Issuer = config.GetSection("Issuer").Value,
                 Audience = config.GetSection("Audience").Value,
-                Expires = DateTime.Now.AddMinutes(15),
+                Expires = DateTime.Now.AddMinutes(10),
                 SigningCredentials = signingCredentials,
             };
             var securityToken = tokenHandler.CreateToken(tokenDescriptor);

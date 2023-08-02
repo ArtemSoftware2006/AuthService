@@ -106,7 +106,7 @@ namespace Services.Implemt
                 PasswordSalt = Convert.ToBase64String(salt),
                 FirstName = userVM.FirstName,
                 LastName = userVM.LastName,
-                Ts = userVM.Ts
+                Ts = DateTime.Now
                
             };
 

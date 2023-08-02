@@ -1,4 +1,4 @@
-using Domain;
+using System.Linq;
 using Domain.VM;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +19,15 @@ namespace API.Controllers
             this.tokenService = tokenService;
         }
 
+        [Authorize]
+        [HttpGet]
+        [Route("test")]
+        public async Task<IActionResult> Test()
+        {
+            return Ok("Авторизованы");
+        }
+
+
         [HttpPost]
         [Route("login")]
         public async Task<IActionResult> Login(UserLoginVM userVM)
@@ -35,6 +44,7 @@ namespace API.Controllers
             {
                 return Unauthorized(loginResponse);
             }
+            HttpContext.Response.Cookies.Append("refreshToken", loginResponse.Data.Item1);
 
             return Ok(loginResponse);
         }
