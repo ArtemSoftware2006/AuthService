@@ -7,7 +7,8 @@ namespace Services.Interfaces
     public interface ITokenService
     {
         Task<Tuple<string, string>> GenerateTokensAsync(int userId);
-        Task<BaseResponse<int>> ValidateRefreshTokenAsync(RefreshTokenVM refreshToken);
+        Task<string> RefreshAccessToken( string refreshToken);
+        Task<BaseResponse<int>> ValidateRefreshTokenAsync(string refreshToken);
         Task<bool> RemoveRefreshTokenAsync(User user);
     }
 }

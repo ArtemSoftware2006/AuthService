@@ -54,6 +54,21 @@ namespace Services.Implemt
             return token;        
         }
 
+        public async Task<string> RefreshAccessToken(string refreshToken)
+        {
+            var refreshTokenFromDB = await dbContext.RefreshTokens
+               .FirstOrDefaultAsync(o => o.TokenHash == refreshToken);
+
+            if (refreshTokenFromDB == null)
+            {
+                return null;
+            }
+
+            var accessToken = await TokenHelper.GenerateAccessToken(refreshTokenFromDB.UserId);
+
+            return accessToken;
+        }
+
         public async Task<bool> RemoveRefreshTokenAsync(User user)
         {
             var userRecord = dbContext.Users.FirstOrDefault(e => e.Id == user.Id);
@@ -75,13 +90,14 @@ namespace Services.Implemt
             return false;
         }
 
-        public async Task<BaseResponse<int>> ValidateRefreshTokenAsync(RefreshTokenVM refreshToken)
+        public async Task<BaseResponse<int>> ValidateRefreshTokenAsync(string refreshToken)
         {
-           var NewRefreshToken = await dbContext.RefreshTokens.FirstOrDefaultAsync
-                               (o => o.UserId == refreshToken.UserId);
+            var RefreshTokenFromDB = await dbContext.RefreshTokens
+                .FirstOrDefaultAsync(o => o.TokenHash == refreshToken);
 
             var response = new BaseResponse<int>();
-            if (NewRefreshToken == null)
+
+            if (RefreshTokenFromDB == null)
             {
                 response.StatusCode = Domain.enums.StatusCode.NotFound;
                 response.Description = "Invalid session or user is already logged out";
@@ -89,16 +105,16 @@ namespace Services.Implemt
             }
 
             var refreshTokenToValidateHash = PasswordHelper
-            .HashUsingPbkdf2(refreshToken.RefreshToken, Convert.FromBase64String(NewRefreshToken.TokenSalt));
+                .HashUsingPbkdf2(refreshToken, Convert.FromBase64String(RefreshTokenFromDB.TokenSalt));
 
-            if (NewRefreshToken.TokenHash != refreshTokenToValidateHash)
+            if (RefreshTokenFromDB.TokenHash != refreshTokenToValidateHash)
             {
                 response.StatusCode = Domain.enums.StatusCode.NotFound;
                 response.Description = "Invalid refresh token";
                 return response;
             }
           
-            if (NewRefreshToken.ExpiryDate < DateTime.Now)
+            if (RefreshTokenFromDB.ExpiryDate < DateTime.Now)
             {
                 response.StatusCode =  Domain.enums.StatusCode.NotFound;
                 response.Description = "Refresh token has expired";
@@ -106,7 +122,7 @@ namespace Services.Implemt
             }
 
             response.StatusCode = Domain.enums.StatusCode.Ok;
-            response.Data = NewRefreshToken.UserId;
+            response.Data = RefreshTokenFromDB.UserId;
 
             return response;
         }

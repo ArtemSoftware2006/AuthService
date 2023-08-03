@@ -1,4 +1,5 @@
 using DAL;
+using Domain.VM;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -39,6 +40,29 @@ builder.Services.AddAuthentication(options =>
                 ValidAudience = config.GetSection("Audience").Value,
                 ValidateLifetime = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(config.GetSection("Secret").Value))
+            };
+            options.Events = new JwtBearerEvents
+            {
+                OnAuthenticationFailed = async context =>
+                {
+                    if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                    {
+                        var refreshToken = context.HttpContext.Request.Cookies["refreshToken"];
+
+                        var tokenService = context.HttpContext.RequestServices.GetService<ITokenService>();
+                        var response = tokenService.ValidateRefreshTokenAsync(refreshToken).Result;
+
+                        if (response.StatusCode == Domain.enums.StatusCode.Ok)
+                        {
+                            var refreshedAccessToken = await tokenService.RefreshAccessToken(refreshToken);
+
+                            if (!string.IsNullOrEmpty(refreshedAccessToken))
+                            {
+                                context.Response.Headers.Add("Authorization", $"Bearer {refreshedAccessToken}");
+                            }   
+                        }
+                    }
+                }
             };
         });
 

@@ -60,7 +60,7 @@ namespace API.Controllers
             }
 
             var validateRefreshTokenResponse = 
-                await tokenService.ValidateRefreshTokenAsync(refreshTokenVM);
+                await tokenService.ValidateRefreshTokenAsync(refreshTokenVM.RefreshToken);
 
             if (validateRefreshTokenResponse.StatusCode != Domain.enums.StatusCode.Ok)
             {
