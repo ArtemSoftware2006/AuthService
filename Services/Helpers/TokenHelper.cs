@@ -31,7 +31,7 @@ namespace API
                 Subject = claimsIdentity,
                 Issuer = config.GetSection("Issuer").Value,
                 Audience = config.GetSection("Audience").Value,
-                Expires = DateTime.Now.AddMinutes(10),
+                Expires = DateTime.Now.AddMinutes( Convert.ToDouble(config.GetSection("TimeLife").Value)),
                 SigningCredentials = signingCredentials,
             };
             var securityToken = tokenHandler.CreateToken(tokenDescriptor);

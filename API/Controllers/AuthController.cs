@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Security.Claims;
 using Domain.VM;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -44,7 +45,15 @@ namespace API.Controllers
             {
                 return Unauthorized(loginResponse);
             }
-            HttpContext.Response.Cookies.Append("refreshToken", loginResponse.Data.Item1);
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                Expires = DateTime.UtcNow.AddDays(10),
+            };
+
+            Response.Cookies.Append("refreshToken", loginResponse.Data.Item2, cookieOptions);
+            Response.Cookies.Append("email", userVM.Email, cookieOptions);
 
             return Ok(loginResponse);
         }
@@ -54,13 +63,14 @@ namespace API.Controllers
         public async Task<IActionResult> RefreshToken(RefreshTokenVM refreshTokenVM)
         {
             if (refreshTokenVM == null || string.IsNullOrEmpty
-            (refreshTokenVM.RefreshToken) || refreshTokenVM.UserId == 0)
+            (refreshTokenVM.RefreshToken) || string.IsNullOrEmpty
+            (refreshTokenVM.Email))
             {
                 return BadRequest("Missing refresh token details");
             }
 
             var validateRefreshTokenResponse = 
-                await tokenService.ValidateRefreshTokenAsync(refreshTokenVM.RefreshToken);
+                await tokenService.ValidateRefreshTokenAsync(refreshTokenVM);
 
             if (validateRefreshTokenResponse.StatusCode != Domain.enums.StatusCode.Ok)
             {
@@ -108,6 +118,7 @@ namespace API.Controllers
 
             if (logout.StatusCode != Domain.enums.StatusCode.Ok)
             {
+                HttpContext.Response.Cookies.Delete("refreshToken");
                 return UnprocessableEntity(logout);
             }
 

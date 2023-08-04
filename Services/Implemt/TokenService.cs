@@ -54,17 +54,26 @@ namespace Services.Implemt
             return token;        
         }
 
-        public async Task<string> RefreshAccessToken(string refreshToken)
+        public async Task<string> RefreshAccessToken(RefreshTokenVM refreshToken)
         {
-            var refreshTokenFromDB = await dbContext.RefreshTokens
-               .FirstOrDefaultAsync(o => o.TokenHash == refreshToken);
+            var user = await dbContext.Users
+                .FirstOrDefaultAsync(o => o.Email == refreshToken.Email);
 
-            if (refreshTokenFromDB == null)
+            Console.WriteLine("Email : " + refreshToken.Email);
+
+            var RefreshTokenFromDB = await dbContext.RefreshTokens
+                .FirstOrDefaultAsync(x => x.UserId == user.Id);
+
+
+            if (RefreshTokenFromDB == null)
             {
                 return null;
             }
+            Console.WriteLine("------------------Токен доступа обновлён!------------------");
 
-            var accessToken = await TokenHelper.GenerateAccessToken(refreshTokenFromDB.UserId);
+            var accessToken = await TokenHelper.GenerateAccessToken(RefreshTokenFromDB.UserId);
+
+            Console.WriteLine(accessToken);
 
             return accessToken;
         }
@@ -90,12 +99,23 @@ namespace Services.Implemt
             return false;
         }
 
-        public async Task<BaseResponse<int>> ValidateRefreshTokenAsync(string refreshToken)
+        public async Task<BaseResponse<int>> ValidateRefreshTokenAsync(RefreshTokenVM refreshToken)
         {
+            var user = await dbContext.Users
+                .FirstOrDefaultAsync(o => o.Email == refreshToken.Email);
+
+            Console.WriteLine("Email : " + refreshToken.Email);
+
             var RefreshTokenFromDB = await dbContext.RefreshTokens
-                .FirstOrDefaultAsync(o => o.TokenHash == refreshToken);
+                .FirstOrDefaultAsync(x => x.UserId == user.Id);
 
             var response = new BaseResponse<int>();
+
+            Console.WriteLine("------------------Проверка refresh токена!------------------");
+            Console.WriteLine(refreshToken.RefreshToken);
+            Console.WriteLine("RefreshTokenFromDB : " + RefreshTokenFromDB.TokenHash);
+            Console.WriteLine(PasswordHelper.HashUsingPbkdf2(refreshToken.RefreshToken, 
+                Convert.FromBase64String(RefreshTokenFromDB.TokenSalt)));
 
             if (RefreshTokenFromDB == null)
             {
@@ -105,7 +125,7 @@ namespace Services.Implemt
             }
 
             var refreshTokenToValidateHash = PasswordHelper
-                .HashUsingPbkdf2(refreshToken, Convert.FromBase64String(RefreshTokenFromDB.TokenSalt));
+                .HashUsingPbkdf2(refreshToken.RefreshToken, Convert.FromBase64String(RefreshTokenFromDB.TokenSalt));
 
             if (RefreshTokenFromDB.TokenHash != refreshTokenToValidateHash)
             {
@@ -123,6 +143,8 @@ namespace Services.Implemt
 
             response.StatusCode = Domain.enums.StatusCode.Ok;
             response.Data = RefreshTokenFromDB.UserId;
+
+            Console.WriteLine("OKOKOKOKOKOKOKOK");
 
             return response;
         }

@@ -48,13 +48,23 @@ builder.Services.AddAuthentication(options =>
                     if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
                     {
                         var refreshToken = context.HttpContext.Request.Cookies["refreshToken"];
+                        var email = context.HttpContext.Request.Cookies["email"];
 
                         var tokenService = context.HttpContext.RequestServices.GetService<ITokenService>();
-                        var response = tokenService.ValidateRefreshTokenAsync(refreshToken).Result;
+
+                        var response = tokenService.ValidateRefreshTokenAsync(new RefreshTokenVM() 
+                        {
+                            RefreshToken = refreshToken, 
+                            Email = email
+                        }).Result;
 
                         if (response.StatusCode == Domain.enums.StatusCode.Ok)
                         {
-                            var refreshedAccessToken = await tokenService.RefreshAccessToken(refreshToken);
+                            var refreshedAccessToken = await tokenService.RefreshAccessToken(new RefreshTokenVM() 
+                            {
+                                RefreshToken = refreshToken, 
+                                Email = email
+                            });
 
                             if (!string.IsNullOrEmpty(refreshedAccessToken))
                             {
@@ -62,6 +72,12 @@ builder.Services.AddAuthentication(options =>
                             }   
                         }
                     }
+                },
+                OnTokenValidated = async context  => {
+                    Console.WriteLine("sfsdfsdfsdfsd");
+                },
+                OnForbidden = async constext => {
+                    Console.WriteLine("Forbidden");
                 }
             };
         });
