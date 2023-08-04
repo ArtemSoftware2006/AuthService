@@ -10,6 +10,11 @@ namespace DAL
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {   }
+        /// <summary>
+        /// Только для тестов
+        /// </summary>
+        public AppDbContext()
+        {   }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {   }
